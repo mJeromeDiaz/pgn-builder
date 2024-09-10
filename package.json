@@ -1,0 +1,20 @@
+{
+  "name": "pgn-builder",
+  "version": "1.0.0",
+  "description": "Javascript library to write a PGN (Portable Game Notation) from SAN (Standard Algebric Notation) moves ",
+  "main": "index.js",
+  "scripts": {
+    "build": "babel src -d dist",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "chess"
+  ],
+  "author": "jerome diaz",
+  "license": "ISC",
+  "devDependencies": {
+    "@babel/cli": "^7.25.6",
+    "@babel/core": "^7.25.2",
+    "@babel/preset-env": "^7.25.4"
+  }
+}
