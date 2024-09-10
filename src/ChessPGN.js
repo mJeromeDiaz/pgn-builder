@@ -6,85 +6,186 @@ class ChessPGN {
     this.isInVariation = false;
   }
 
-  // Méthode pour ajouter un en-tête
   setHeader (key, value) {
     this.headers[key] = value;
   }
 
-  // Méthode pour ajouter un coup en format SAN
   addMove (sanMove, comment = "", isVariation = false) {
     const moveObject = {
       move: this._convertSANtoPGN(sanMove),
-      comment: this._replaceAnnotationsWithNAG(comment),
+      comment: comment,
       variations: [],
     };
 
-    if (isVariation && this.currentVariation) {
-      this.currentVariation.variations.push(moveObject);
+    if (isVariation) {
+      if (!this.currentVariation) {
+        // Si on commence une nouvelle variante, on l'ajoute au dernier coup
+        const lastMove = this.moves[this.moves.length - 1];
+        lastMove.variations.push([moveObject]);
+        this.currentVariation = lastMove.variations[lastMove.variations.length - 1];
+      } else {
+        // Sinon, on ajoute le coup à la variante courante
+        this.currentVariation.push(moveObject);
+      }
     } else {
       this.moves.push(moveObject);
-      this.currentVariation = moveObject;
+      this.currentVariation = null;
     }
   }
 
-  // Convertir les annotations SAN en NAG
-  _replaceAnnotationsWithNAG (comment) {
-    const nagMap = {
-      "!": "$1",
-      "?": "$2",
-      "!!": "$3",
-      "??": "$4",
-      "!?": "$5",
-      "?!": "$6",
-    };
-
-    Object.keys(nagMap).forEach((symbol) => {
-      const regex = new RegExp(`\\${symbol}`, "g");
-      comment = comment.replace(regex, nagMap[symbol]);
-    });
-
-    return comment;
-  }
-
-  // Conversion SAN -> PGN
   _convertSANtoPGN (sanMove) {
-    // Traite la promotion, les ambiguïtés, les signes + et #, etc.
-    // https://fr.wikipedia.org/wiki/Portable_Game_Notation#SAN
-    // Exemple : "e8=Q", "Nce4", "O-O+", "e5#"...
-    return sanMove.replace(/(\w)\=([QRBN])/g, "$1=$2");
+    return sanMove.replace(/(\w)=([QRBN])/g, "$1=$2");
   }
 
-  // Méthode pour récupérer le PGN
   getPGN () {
     let pgn = "";
-
-    // Ajout des en-têtes
     Object.keys(this.headers).forEach((key) => {
       pgn += `[${key} "${this.headers[key]}"]\n`;
     });
     pgn += "\n";
 
-    // Ajout des coups
-    let moveIndex = 1;
-    this.moves.forEach((moveObj, index) => {
-      if (index % 2 === 0) pgn += `${moveIndex}. `;
-      pgn += this._formatMoveWithVariations(moveObj);
-      if (index % 2 === 1) moveIndex++;
+    pgn += this._formatMoves(this.moves);
+    return pgn.trim();
+  }
+
+  _formatMoves (moves, startIndex = 1, isVariation = false) {
+    let pgn = "";
+    let moveIndex = startIndex;
+
+    moves.forEach((moveObj, index) => {
+      if (index === 0 && isVariation) {
+        if (moveIndex % 2 === 0) {
+          pgn += `${Math.floor(moveIndex / 2)}... `;
+        }
+      } else if (moveIndex % 2 === 1) {
+        pgn += `${Math.floor(moveIndex / 2) + 1}. `;
+      }
+
+      pgn += moveObj.move;
+      if (moveObj.comment) pgn += ` {${moveObj.comment}}`;
+
+      if (moveObj.variations.length > 0) {
+        moveObj.variations.forEach(variation => {
+          pgn += ` (${this._formatMoves(variation, moveIndex, true)})`;
+        });
+      }
+
+      pgn += " ";
+      moveIndex++;
     });
 
     return pgn.trim();
   }
-
-  // Formater les coups avec les variantes
-  _formatMoveWithVariations (moveObj) {
-    let moveStr = moveObj.move;
-    if (moveObj.comment) moveStr += ` {${moveObj.comment}}`;
-
-    moveObj.variations.forEach((variation) => {
-      moveStr += ` (${this._formatMoveWithVariations(variation)})`;
-    });
-
-    return moveStr + " ";
-  }
 }
 
+export default ChessPGN;
+/*****  avec traitement nag
+class ChessPGN {
+ constructor() {
+   this.headers = {};
+   this.moves = [];
+   this.currentVariation = null;
+   this.isInVariation = false;
+ }
+
+ setHeader (key, value) {
+   this.headers[key] = value;
+ }
+
+ addMove (sanMove, annotation = "", comment = "", isVariation = false) {
+   const moveObject = {
+     move: this._convertSANtoPGN(sanMove),
+     annotation: this._convertAnnotationToNAG(annotation),
+     comment: comment,
+     variations: [],
+   };
+
+   if (isVariation) {
+     if (!this.currentVariation) {
+       const lastMove = this.moves[this.moves.length - 1];
+       lastMove.variations.push([moveObject]);
+       this.currentVariation = lastMove.variations[lastMove.variations.length - 1];
+     } else {
+       this.currentVariation.push(moveObject);
+     }
+   } else {
+     this.moves.push(moveObject);
+     this.currentVariation = null;
+   }
+ }
+
+ _convertSANtoPGN (sanMove) {
+   return sanMove.replace(/(\w)=([QRBN])/g, "$1=$2");
+ }
+
+ _convertAnnotationToNAG (annotation) {
+   const nagMap = {
+     "!": "$1",
+     "?": "$2",
+     "!!": "$3",
+     "??": "$4",
+     "!?": "$5",
+     "?!": "$6",
+     "□": "$7",
+     "=": "$10",
+     "∞": "$13",
+     "⩲": "$14",
+     "⩱": "$15",
+     "±": "$16",
+     "∓": "$17",
+     "+−": "$18",
+     "−+": "$19",
+   };
+   return nagMap[annotation] || "";
+ }
+
+ getPGN () {
+   let pgn = "";
+   Object.keys(this.headers).forEach((key) => {
+     pgn += `[${key} "${this.headers[key]}"]\n`;
+   });
+   pgn += "\n";
+
+   pgn += this._formatMoves(this.moves);
+   return pgn.trim();
+ }
+
+ _formatMoves (moves, startIndex = 1, isVariation = false) {
+   let pgn = "";
+   let moveIndex = startIndex;
+
+   moves.forEach((moveObj, index) => {
+     if (index === 0 && isVariation) {
+       if (moveIndex % 2 === 0) {
+         pgn += `${Math.floor(moveIndex / 2)}... `;
+       }
+     } else if (moveIndex % 2 === 1) {
+       pgn += `${Math.floor(moveIndex / 2) + 1}. `;
+     }
+
+     pgn += moveObj.move;
+
+     if (moveObj.annotation) {
+       pgn += ` ${moveObj.annotation}`;
+     }
+
+     if (moveObj.comment) {
+       pgn += ` {${moveObj.comment}}`;
+     }
+
+     if (moveObj.variations.length > 0) {
+       moveObj.variations.forEach(variation => {
+         pgn += ` (${this._formatMoves(variation, moveIndex, true)})`;
+       });
+     }
+
+     pgn += " ";
+     moveIndex++;
+   });
+
+   return pgn.trim();
+ }
+}
+
+export default ChessPGN;
+*/

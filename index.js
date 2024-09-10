@@ -1,2 +1,2 @@
-const ChessPGN = require('./src/ChessPGN');
-module.exports = ChessPGN;
+import ChessPGN from './src/ChessPGN.js';
+export default ChessPGN;

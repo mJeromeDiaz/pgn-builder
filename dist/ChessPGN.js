@@ -1,5 +1,9 @@
 "use strict";
 
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports["default"] = void 0;
 function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
 function _classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
 function _defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, _toPropertyKey(o.key), o); } }
@@ -65,11 +69,12 @@ var ChessPGN = /*#__PURE__*/function () {
     key: "_convertSANtoPGN",
     value: function _convertSANtoPGN(sanMove) {
       // Traite la promotion, les ambiguïtés, les signes + et #, etc.
+      // https://fr.wikipedia.org/wiki/Portable_Game_Notation#SAN
       // Exemple : "e8=Q", "Nce4", "O-O+", "e5#"...
       return sanMove.replace(/(\w)\=([QRBN])/g, "$1=$2");
     }
 
-    // Méthode pour récupérer le PGN complet
+    // Méthode pour récupérer le PGN
   }, {
     key: "getPGN",
     value: function getPGN() {
@@ -105,19 +110,5 @@ var ChessPGN = /*#__PURE__*/function () {
       return moveStr + " ";
     }
   }]);
-}(); // Exemple d'utilisation
-var game = new ChessPGN();
-game.setHeader("Event", "F/S Return Match");
-game.setHeader("Site", "Belgrade, Serbia JUG");
-game.setHeader("Date", "1992.11.04");
-game.setHeader("Round", "29");
-game.setHeader("White", "Fischer, Robert J.");
-game.setHeader("Black", "Spassky, Boris V.");
-game.setHeader("Result", "1/2-1/2");
-game.addMove("e4");
-game.addMove("e5");
-game.addMove("Nf3");
-game.addMove("Nc6");
-game.addMove("Bb5", "", true); // Coup dans une variante
-game.addMove("a6", "a speculative move!?");
-console.log(game.getPGN());
+}();
+var _default = exports["default"] = ChessPGN;
